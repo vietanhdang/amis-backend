@@ -1,8 +1,9 @@
 ﻿namespace Misa_Web08_TCDN_AnhDv_Api.Entities
 {
     /// <summary>
-    /// Phòng ban
+    /// Bảng phòng ban
     /// </summary>
+    /// Created by: TCDN AnhDV (16/09/2022)
     public class Department
     {
         /// <summary>

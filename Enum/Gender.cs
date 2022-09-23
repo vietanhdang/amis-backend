@@ -3,6 +3,7 @@
     /// <summary>
     /// Giới tính
     /// </summary>
+    /// Created by: TCDN AnhDV (16/09/2022)
     public enum Gender
     {
         /// <summary>

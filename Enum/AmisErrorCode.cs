@@ -1,5 +1,9 @@
 ﻿namespace Misa.Web08.TCDN.API.Enum
 {
+    /// <summary>
+    /// Khai báo mã lỗi của API khi thực hiện các thao tác phát sinh lỗi xảy ra
+    /// </summary>
+    /// Created by: TCDN AnhDV (16/09/2022)
     public enum AmisErrorCode
     {
         /// <summary>

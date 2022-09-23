@@ -2,7 +2,11 @@
 using System.ComponentModel.DataAnnotations;
 
 namespace Misa_Web08_TCDN_AnhDv_Api.Entities
-{
+{ 
+    /// <summary>
+    /// Bảng nhân viên
+    /// </summary>
+    /// Created by: TCDN AnhDV (16/09/2022)
     public class Employee
     {
         /// <summary>

@@ -11,6 +11,10 @@ using Misa.Web08.TCDN.API.Entities;
 
 namespace Misa_Web08_TCDN_AnhDv_Api.Controllers
 {
+    /// <summary>
+    /// Các API liên quan đến thêm sửa xóa nhân viên
+    /// </summary>
+    /// Created by: TCDN AnhDV (16/09/2022)
     [Route("api/v1/employees")]
     [ApiController]
     public class EmployeesController : ControllerBase
@@ -18,6 +22,7 @@ namespace Misa_Web08_TCDN_AnhDv_Api.Controllers
         /// <summary>
         /// Chuỗi kết nối đến Database
         /// </summary>        
+        /// Created by: TCDN AnhDV (16/09/2022)
         private const string mySqlconnectionString = "Server=localhost;Port=3306;Database=misa.web08.tcdn.dva;Uid=root;Pwd=12345678;";
 
         #region API DO GET

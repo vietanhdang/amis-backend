@@ -7,6 +7,10 @@ using MySqlConnector;
 
 namespace Misa_Web08_TCDN_AnhDv_Api.Controllers
 {
+    /// <summary>
+    /// Các API liên quan đến phòng ban
+    /// </summary>
+    /// Created by: TCDN AnhDV (16/09/2022)
     [Route("api/v1/departments")]
     [ApiController]
     public class DepartmentsController : ControllerBase
@@ -14,6 +18,7 @@ namespace Misa_Web08_TCDN_AnhDv_Api.Controllers
         /// <summary>
         /// Chuỗi kết nối đến Database
         /// </summary>        
+        /// Created by: TCDN AnhDV (16/09/2022)
         private const string mySqlconnectionString = "Server=localhost;Port=3306;Database=misa.web08.tcdn.dva;Uid=root;Pwd=12345678;";
 
         // private const string  mySqlconnectionString = "Server=3.0.89.182;Port=3306;Database= WDT.2022.PCTUANANH;Uid=dev;Pwd=12345678;";
@@ -23,11 +28,10 @@ namespace Misa_Web08_TCDN_AnhDv_Api.Controllers
         /// API Lấy toàn bộ danh sách phòng ban
         /// </summary>
         /// <returns>Danh sách phòng ban</returns>
-        // add code description for swagger
-        [SwaggerOperation(Summary = "Lấy toàn bộ danh sách phòng ban", Description = "Lấy toàn bộ danh sách phòng ban", Tags = new[] { "Departments" })]
         /// <response code="200">Trả về danh sách phòng ban</response>
         /// Created by: TCDN AnhDV (16/09/2022)
         [HttpGet]
+        [SwaggerOperation(Summary = "Lấy toàn bộ danh sách phòng ban", Description = "Lấy toàn bộ danh sách phòng ban", Tags = new[] { "Departments" })]
         [SwaggerResponse(StatusCodes.Status200OK, type: typeof(List<Department>))]
         [SwaggerResponse(StatusCodes.Status400BadRequest)]
         [SwaggerResponse(StatusCodes.Status500InternalServerError)]
