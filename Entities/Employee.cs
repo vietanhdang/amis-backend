@@ -21,7 +21,7 @@ namespace Misa_Web08_TCDN_AnhDv_Api.Entities
         /// Mã nhân viên
         /// </summary>
         [NotNullAttribute("Mã nhân viên không được phép để trống")]
-        [FormatAttribute("Mã nhân viên không đúng định dạng", "^NV-[0-9]$")]
+        [FormatAttribute("Mã nhân viên không đúng định dạng", @"^NV-[0-9]{1,}$")]
         public string? EmployeeCode { get; set; }
 
         /// <summary>
@@ -175,6 +175,7 @@ namespace Misa_Web08_TCDN_AnhDv_Api.Entities
                     {
                         if (!string.IsNullOrEmpty(propertyValue?.ToString()))
                         {
+
                             if (!Regex.IsMatch(propertyValue.ToString(), ((FormatAttribute)propertyAttribute).Regex))
                             {
                                 isValid = false;

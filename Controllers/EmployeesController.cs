@@ -222,8 +222,13 @@ namespace Misa_Web08_TCDN_AnhDv_Api.Controllers
                 }
                 else
                 {
-                    // Nếu không có dữ liệu thì trả về 204 No Content
-                    return StatusCode(StatusCodes.Status204NoContent);
+                    return StatusCode(StatusCodes.Status400BadRequest, new ErrorResult(
+                         AmisCode.Delete,
+                         Resource.UserMsg_Delete_Failed,
+                         Resource.DevMsg_Delete_Failed,
+                         Resource.MoreInfo_Exception,
+                         HttpContext.TraceIdentifier
+                     ));
                 }
             }
             catch (Exception exception)
@@ -314,7 +319,7 @@ namespace Misa_Web08_TCDN_AnhDv_Api.Controllers
                 else
                 {
                     return StatusCode(StatusCodes.Status400BadRequest, new ErrorResult(
-                          AmisCode.Exception,
+                          AmisCode.Insert,
                           Resource.UserMsg_Insert_Failed,
                           Resource.DevMsg_Insert_Failed,
                           Resource.MoreInfo_Exception,
@@ -340,7 +345,7 @@ namespace Misa_Web08_TCDN_AnhDv_Api.Controllers
                 }
 
                 return StatusCode(StatusCodes.Status400BadRequest, new ErrorResult(
-                         AmisCode.Exception,
+                         AmisCode.Insert,
                          Resource.UserMsg_Insert_Failed,
                          Resource.DevMsg_Insert_Failed,
                          Resource.MoreInfo_Exception,
@@ -411,9 +416,17 @@ namespace Misa_Web08_TCDN_AnhDv_Api.Controllers
                     // Lấy ra giá trị của property
                     var propertyValue = property.GetValue(employee);
 
+                    if (propertyName == "CreatedDate" || propertyName == "CreatedBy")
+                    {
+                        continue;
+                    }
+
                     // Thêm tham số đầu vào cho stored procedure
                     parameters.Add($"@v_{propertyName}", propertyValue);
                 }
+
+                // set lại giá trị cho EmployeeID
+                parameters.Add("@v_EmployeeID", employeeID);
 
                 // set lại giá trị cho ModifiedDate
                 parameters.Add("@v_ModifiedDate", DateTime.Now);
@@ -432,7 +445,7 @@ namespace Misa_Web08_TCDN_AnhDv_Api.Controllers
                 else
                 {
                     return StatusCode(StatusCodes.Status400BadRequest, new ErrorResult(
-                         AmisCode.Exception,
+                         AmisCode.Update,
                          Resource.UserMsg_Update_Failed,
                          Resource.DevMsg_Update_Failed,
                          Resource.MoreInfo_Exception,
@@ -443,7 +456,7 @@ namespace Misa_Web08_TCDN_AnhDv_Api.Controllers
             catch (MySqlException mySqlException)
             {
                 Console.WriteLine(mySqlException.Message);
-                
+
                 if (mySqlException.ErrorCode == MySqlErrorCode.DuplicateKeyEntry)
                 {
                     return StatusCode(StatusCodes.Status400BadRequest, new ErrorResult(
@@ -455,7 +468,7 @@ namespace Misa_Web08_TCDN_AnhDv_Api.Controllers
                      ));
                 }
                 return StatusCode(StatusCodes.Status400BadRequest, new ErrorResult(
-                          AmisCode.Exception,
+                          AmisCode.Update,
                           Resource.UserMsg_Update_Failed,
                           Resource.DevMsg_Update_Failed,
                           Resource.MoreInfo_Exception,
