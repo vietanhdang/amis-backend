@@ -14,12 +14,27 @@
         /// <summary>
         /// Lỗi do validate dữ liệu thất bại
         /// </summary>
-       Validate = 2,
+        Validate = 2,
 
         /// <summary>
         /// Lỗi do trùng mã
         /// </summary>
-       DuplicateCode = 3,
+        DuplicateCode = 3,
+
+        /// <summary>
+        /// Lỗi do Insert dữ liệu
+        /// </summary>
+        Insert = 4,
+
+        /// <summary>
+        /// Lỗi do Update dữ liệu
+        /// </summary>
+        Update = 5,
+
+        /// <summary>
+        /// Lỗi do Delete dữ liệu
+        /// </summary>
+        Delete = 6,
 
     }
 }
