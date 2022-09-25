@@ -28,7 +28,7 @@ namespace Misa_Web08_TCDN_AnhDv_Api.Controllers
         [SwaggerResponse(StatusCodes.Status200OK, type: typeof(List<Department>))]
         [SwaggerResponse(StatusCodes.Status400BadRequest)]
         [SwaggerResponse(StatusCodes.Status500InternalServerError)]
-        public IActionResult GetAllPositions()
+        public IActionResult GetAllDepartments()
         {
             try
             {
