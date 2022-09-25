@@ -8,6 +8,9 @@ using Misa_Web08_TCDN_AnhDv_Api.Entities.DTO;
 using MySqlConnector;
 using Swashbuckle.AspNetCore.Annotations;
 using Misa.Web08.TCDN.API.Entities;
+using System.ComponentModel.DataAnnotations;
+using Misa.Web08.TCDN.API.DAO;
+using Misa.Web08.TCDN.API.Properties;
 
 namespace Misa_Web08_TCDN_AnhDv_Api.Controllers
 {
@@ -19,11 +22,6 @@ namespace Misa_Web08_TCDN_AnhDv_Api.Controllers
     [ApiController]
     public class EmployeesController : ControllerBase
     {
-        /// <summary>
-        /// Chuỗi kết nối đến Database
-        /// </summary>        
-        /// Created by: TCDN AnhDV (16/09/2022)
-        private const string mySqlconnectionString = "Server=localhost;Port=3306;Database=misa.web08.tcdn.dva;Uid=root;Pwd=12345678;";
 
         #region API DO GET
         /// <summary>
@@ -39,23 +37,15 @@ namespace Misa_Web08_TCDN_AnhDv_Api.Controllers
         {
             try
             {
-                // Khởi tạo kết nối tới DB MySQL
-                string connectionString = mySqlconnectionString;
-                var mySqlConnection = new MySqlConnection(connectionString);
-
                 // Chuẩn bị tên stored procedure
                 string storedProcedureName = "Proc_Employee_GetMaxEmployeeCode";
 
                 // Thực hiện gọi vào DB để chạy stored procedure ở trên
-                string maxEmployeeCode = mySqlConnection.QueryFirstOrDefault<string>(storedProcedureName, commandType: System.Data.CommandType.StoredProcedure);
+                string maxEmployeeCode = MySqlDataAccessHelper.Get<string>(storedProcedureName, System.Data.CommandType.StoredProcedure);
 
-                // Xử lý sinh mã nhân viên mới tự động tăng
-                // Cắt chuỗi mã nhân viên lớn nhất trong hệ thống để lấy phần số
-                // Mã nhân viên mới = "NV" + Giá trị cắt chuỗi ở  trên + 1
+                // Mã nhân viên mới = "NV-" + Giá trị nhân viên lớn nhất đã + 1 trong procedure
 
-                string codeNumber = maxEmployeeCode.Split("-")[1];
-
-                string newEmployeeCode = $"NV-{(Int64.Parse(codeNumber) + 1)}".ToString();
+                string newEmployeeCode = $"NV-{maxEmployeeCode}";
 
                 // Trả về dữ liệu cho client
                 return StatusCode(StatusCodes.Status200OK, newEmployeeCode);
@@ -64,11 +54,12 @@ namespace Misa_Web08_TCDN_AnhDv_Api.Controllers
             {
                 Console.WriteLine(ex.Message);
                 return StatusCode(StatusCodes.Status500InternalServerError, new ErrorResult(
-                    AmisErrorCode.Exception,
-                    "Catched an exception",
-                    "Có lỗi xảy ra",
-                    null,
-                    HttpContext.TraceIdentifier));
+                    AmisCode.Exception,
+                    Resource.UserMsg_Exception,
+                    Resource.DevMsg_Exception,
+                    Resource.MoreInfo_Exception,
+                    HttpContext.TraceIdentifier)
+                );
             }
         }
 
@@ -88,18 +79,17 @@ namespace Misa_Web08_TCDN_AnhDv_Api.Controllers
             try
             {
                 // Khởi tạo kết nối tới DB MySQL
-                string connectionString = mySqlconnectionString;
-                var mySqlConnection = new MySqlConnection(connectionString);
+
 
                 // Chuẩn bị tên Stored procedure
                 string storedProcedureName = "Proc_Employee_GetEmployeeByID";
 
                 // Chuẩn bị tham số đầu vào cho stored procedure
                 var parameters = new DynamicParameters();
-                parameters.Add("@$EmployeeID", employeeID);
+                parameters.Add("@v_EmployeeID", employeeID);
 
                 // Thực hiện gọi vào DB để chạy stored procedure với tham số đầu vào ở trên
-                var employee = mySqlConnection.QueryFirstOrDefault<Employee>(storedProcedureName, parameters, commandType: System.Data.CommandType.StoredProcedure);
+                var employee = MySqlDataAccessHelper.Get<Employee>(storedProcedureName, System.Data.CommandType.StoredProcedure, parameters);
 
                 // Xử lý kết quả trả về từ DB
                 if (employee != null)
@@ -115,11 +105,12 @@ namespace Misa_Web08_TCDN_AnhDv_Api.Controllers
             {
                 Console.WriteLine(exception.Message);
                 return StatusCode(StatusCodes.Status500InternalServerError, new ErrorResult(
-                   AmisErrorCode.Exception,
-                   "Catched an exception",
-                   "Có lỗi xảy ra",
-                   "https://openapi.amis.vn/api/v1/employees",
-                   HttpContext.TraceIdentifier));
+                    AmisCode.Exception,
+                    Resource.UserMsg_Exception,
+                    Resource.DevMsg_Exception,
+                    Resource.MoreInfo_Exception,
+                    HttpContext.TraceIdentifier
+                ));
             }
         }
 
@@ -141,10 +132,6 @@ namespace Misa_Web08_TCDN_AnhDv_Api.Controllers
         {
             try
             {
-                // Khởi tạo kết nối tới DB MySQL
-                string connectionString = mySqlconnectionString;
-                var mySqlConnection = new MySqlConnection(connectionString);
-
                 // Chuẩn bị tên Stored procedure
                 string storedProcedureName = "Proc_Employee_GetPaging";
 
@@ -165,33 +152,37 @@ namespace Misa_Web08_TCDN_AnhDv_Api.Controllers
                 parameters.Add("@v_Where", whereClause);
 
                 // Thực hiện gọi vào DB để chạy stored procedure với tham số đầu vào ở trên
-                var multipleResults = mySqlConnection.QueryMultiple(storedProcedureName, parameters, commandType: System.Data.CommandType.StoredProcedure);
+                var employees = MySqlDataAccessHelper.GetMultiple(storedProcedureName, System.Data.CommandType.StoredProcedure, parameters, (employee) => employee.Read<Employee>(), (total) => total.Read<long>().FirstOrDefault());
 
-                // Xử lý kết quả trả về từ DB
-                if (multipleResults != null)
+                if (employees != null)
                 {
-                    var employees = multipleResults.Read<Employee>();
-                    var totalCount = multipleResults.Read<long>().Single();
-                    return StatusCode(StatusCodes.Status200OK, new PagingData<Employee>()
+                    // Xử lý kết quả trả về từ DB
+                    var pagingData = new PagingData<Employee>()
                     {
-                        Data = employees.ToList(),
-                        TotalCount = totalCount
-                    });
+                        Data = (List<Employee>)employees[0],
+                        TotalCount = (long)employees[1],
+                    };
+
+                    // Trả về kết quả cho client nếu có dữ liệu
+                    return StatusCode(StatusCodes.Status200OK, pagingData);
                 }
                 else
                 {
-                    return StatusCode(StatusCodes.Status400BadRequest, new ErrorCodeMs("e002"));
+                    // nếu không có dữ liệu thì trả về 204 No Content
+                    return StatusCode(StatusCodes.Status204NoContent);
                 }
             }
-            catch (Exception exception)
+            catch (Exception ex)
             {
-                Console.WriteLine(exception.Message);
+                // Nếu có lỗi thì trả về 500
+                Console.WriteLine(ex.Message);
                 return StatusCode(StatusCodes.Status500InternalServerError, new ErrorResult(
-                   AmisErrorCode.Exception,
-                   "Catched an exception",
-                   "Có lỗi xảy ra",
-                   "https://openapi.amis.vn/api/v1/employees",
-                   HttpContext.TraceIdentifier));
+                    AmisCode.Exception,
+                    Resource.UserMsg_Exception,
+                    Resource.DevMsg_Exception,
+                    Resource.MoreInfo_Exception,
+                    HttpContext.TraceIdentifier
+                ));
             }
         }
 
@@ -212,19 +203,16 @@ namespace Misa_Web08_TCDN_AnhDv_Api.Controllers
         {
             try
             {
-                // Khởi tạo kết nối tới DB MySQL
-                string connectionString = mySqlconnectionString;
-                var mySqlConnection = new MySqlConnection(connectionString);
 
-                // Chuẩn bị câu lệnh DELETE
-                string deleteEmployeeCommand = "DELETE FROM employee WHERE EmployeeID = @EmployeeID";
+                // Chuẩn bị câu lệnh Prepared Statement
+                string storedProcedureName = "Proc_Employee_DeleteEmployeeByID";
 
                 // Chuẩn bị tham số đầu vào cho câu lệnh DELETE
                 var parameters = new DynamicParameters();
-                parameters.Add("@EmployeeID", employeeID);
+                parameters.Add("@v_EmployeeID", employeeID);
 
                 // Thực hiện gọi vào DB để chạy câu lệnh DELETE với tham số đầu vào ở trên
-                int numberOfAffectedRows = mySqlConnection.Execute(deleteEmployeeCommand, parameters);
+                int numberOfAffectedRows = MySqlDataAccessHelper.Execute(storedProcedureName, System.Data.CommandType.StoredProcedure, parameters);
 
                 // Xử lý kết quả trả về từ DB
                 if (numberOfAffectedRows > 0)
@@ -234,18 +222,22 @@ namespace Misa_Web08_TCDN_AnhDv_Api.Controllers
                 }
                 else
                 {
-                    return StatusCode(StatusCodes.Status400BadRequest, new ErrorCodeMs("e002"));
+                    // Nếu không có dữ liệu thì trả về 204 No Content
+                    return StatusCode(StatusCodes.Status204NoContent);
                 }
             }
             catch (Exception exception)
             {
+                // Nếu có lỗi exception thì trả về 500
                 Console.WriteLine(exception.Message);
+
                 return StatusCode(StatusCodes.Status500InternalServerError, new ErrorResult(
-                   AmisErrorCode.Exception,
-                   "Catched an exception",
-                   "Có lỗi xảy ra",
-                   "https://openapi.amis.vn/api/v1/employees",
-                   HttpContext.TraceIdentifier));
+                    AmisCode.Exception,
+                    Resource.UserMsg_Exception,
+                    Resource.DevMsg_Exception,
+                    Resource.MoreInfo_Exception,
+                    HttpContext.TraceIdentifier
+                ));
             }
         }
         #endregion
@@ -265,41 +257,55 @@ namespace Misa_Web08_TCDN_AnhDv_Api.Controllers
         {
             try
             {
-                // Khởi tạo kết nối tới DB MySQL
-                string connectionString = mySqlconnectionString;
-                var mySqlConnection = new MySqlConnection(connectionString);
+                // Validate dữ liệu
+                List<string> errorMessages = new List<string>();
+
+                if (!employee.IsValid(out errorMessages))
+                {
+                    // Trả về lỗi cho client nếu các trường dữ liệu không hợp lệ
+                    return StatusCode(StatusCodes.Status400BadRequest, new ErrorResult(
+                        AmisCode.Validate,
+                        errorMessages.ToList(),
+                        Resource.DevMsg_Validate_Failed,
+                        Resource.MoreInfo_Exception,
+                        HttpContext.TraceIdentifier
+                    ));
+                }
 
                 // Chuẩn bị tên Stored procedure
                 string storedProcedureName = "Proc_Employee_InsertEmployee";
+
                 // Chuẩn bị tham số đầu vào cho stored procedure
                 var parameters = new DynamicParameters();
                 var employeeID = Guid.NewGuid();
-                parameters.Add("@$EmployeeID", employeeID);
-                parameters.Add("@$EmployeeCode", employee.EmployeeCode);
-                parameters.Add("@$EmployeeName", employee.EmployeeName);
-                parameters.Add("@$DateOfBirth", employee.DateOfBirth);
-                parameters.Add("@$Gender", employee.Gender);
-                parameters.Add("@$EmployeeAddress", employee.EmployeeAddress);
-                parameters.Add("@$DepartmentID", employee.DepartmentID);
-                parameters.Add("@$JobTitle", employee.JobTitle);
-                parameters.Add("@$IdentityNumber", employee.IdentityNumber);
-                parameters.Add("@$IdentityDate", employee.IdentityDate);
-                parameters.Add("@$IdentityPlace", employee.IdentityPlace);
-                parameters.Add("@$PhoneNumber", employee.PhoneNumber);
-                parameters.Add("@$TelephoneNumber", employee.TelephoneNumber);
-                parameters.Add("@$Email", employee.Email);
-                parameters.Add("@$BankAccountNumber", employee.BankAccountNumber);
-                parameters.Add("@$BankName", employee.BankName);
-                parameters.Add("@$BankBranch", employee.BankBranch);
-                parameters.Add("@$IsCustomer", employee.IsCustomer);
-                parameters.Add("@$IsSupplier", employee.IsSupplier);
-                parameters.Add("@$CreatedDate", DateTime.Now);
-                parameters.Add("@$CreatedBy", "Đặng Việt Anh");
-                parameters.Add("@$ModifiedDate", DateTime.Now);
-                parameters.Add("@$ModifiedBy", "Đặng Việt Anh");
 
+                // lấy ra các property của đối tượng employee
+                var properties = employee.GetType().GetProperties();
+
+                foreach (var property in properties)
+                {
+                    // Lấy ra tên của property
+                    var propertyName = property.Name;
+
+                    // Lấy ra giá trị của property
+                    var propertyValue = property.GetValue(employee);
+
+                    // Thêm tham số đầu vào cho stored procedure
+                    parameters.Add($"@v_{propertyName}", propertyValue);
+                }
+
+                // set lại giá trị cho EmployeeID
+                parameters.Add("@v_EmployeeID", employeeID);
+                // set giá trị cho CreatedDate
+                parameters.Add("@v_CreatedDate", DateTime.Now);
+                // set giá trị cho ModifiedDate
+                parameters.Add("@v_ModifiedDate", DateTime.Now);
+                // set giá trị cho CreatedBy
+                parameters.Add("@v_CreatedBy", "Đặng Việt Anh");
+                // set giá trị cho ModifiedBy
+                parameters.Add("@v_ModifiedBy", "Đặng Việt Anh");
                 // Thực hiện gọi vào DB để chạy stored procedure với tham số đầu vào ở trên
-                var rowEffects = mySqlConnection.Execute(storedProcedureName, parameters, commandType: System.Data.CommandType.StoredProcedure);
+                var rowEffects = MySqlDataAccessHelper.Execute(storedProcedureName, System.Data.CommandType.StoredProcedure, parameters);
 
                 if (rowEffects > 0)
                 {
@@ -307,29 +313,52 @@ namespace Misa_Web08_TCDN_AnhDv_Api.Controllers
                 }
                 else
                 {
-                    return StatusCode(StatusCodes.Status400BadRequest, new ErrorCodeMs("e002"));
+                    return StatusCode(StatusCodes.Status400BadRequest, new ErrorResult(
+                          AmisCode.Exception,
+                          Resource.UserMsg_Insert_Failed,
+                          Resource.DevMsg_Insert_Failed,
+                          Resource.MoreInfo_Exception,
+                          HttpContext.TraceIdentifier
+                      ));
                 }
 
             }
             catch (MySqlException mySqlException)
             {
                 Console.WriteLine(mySqlException.Message);
-                // TODO: Sau này có thể bổ sung log lỗi ở đây để khi gặp exception trace lỗi cho dễ
+
+                // trả về lỗi trùng mã cho client
                 if (mySqlException.ErrorCode == MySqlErrorCode.DuplicateKeyEntry)
                 {
-                    return StatusCode(StatusCodes.Status400BadRequest, new ErrorCodeMs("e002"));
+                    return StatusCode(StatusCodes.Status400BadRequest, new ErrorResult(
+                         AmisCode.DuplicateCode,
+                         Resource.UserMsg_Insert_Duplicate,
+                         Resource.DevMsg_Insert_Duplicate,
+                         Resource.MoreInfo_Exception,
+                         HttpContext.TraceIdentifier
+                     ));
                 }
-                return StatusCode(StatusCodes.Status400BadRequest, new ErrorCodeMs("e001"));
+
+                return StatusCode(StatusCodes.Status400BadRequest, new ErrorResult(
+                         AmisCode.Exception,
+                         Resource.UserMsg_Insert_Failed,
+                         Resource.DevMsg_Insert_Failed,
+                         Resource.MoreInfo_Exception,
+                         HttpContext.TraceIdentifier
+                     ));
             }
             catch (Exception exception)
             {
+                // trả về lỗi không xác định cho client
                 Console.WriteLine(exception.Message);
+
                 return StatusCode(StatusCodes.Status500InternalServerError, new ErrorResult(
-                   AmisErrorCode.Exception,
-                   "Catched an exception",
-                   "Có lỗi xảy ra",
-                   "https://openapi.amis.vn/api/v1/employees",
-                   HttpContext.TraceIdentifier));
+                    AmisCode.Exception,
+                    Resource.UserMsg_Exception,
+                    Resource.DevMsg_Exception,
+                    Resource.MoreInfo_Exception,
+                    HttpContext.TraceIdentifier
+                ));
             }
         }
         #endregion
@@ -350,9 +379,20 @@ namespace Misa_Web08_TCDN_AnhDv_Api.Controllers
         {
             try
             {
-                // Khởi tạo kết nối tới DB MySQL
-                string connectionString = mySqlconnectionString;
-                var mySqlConnection = new MySqlConnection(connectionString);
+                // Validate dữ liệu
+                List<string> errorMessages = new List<string>();
+
+                if (!employee.IsValid(out errorMessages))
+                {
+                    // Trả về lỗi cho client nếu các trường dữ liệu không hợp lệ
+                    return StatusCode(StatusCodes.Status400BadRequest, new ErrorResult(
+                        AmisCode.Validate,
+                        errorMessages.ToList(),
+                        Resource.DevMsg_Validate_Failed,
+                        Resource.MoreInfo_Exception,
+                        HttpContext.TraceIdentifier
+                    ));
+                }
 
                 // Chuẩn bị tên Stored procedure
                 string storedProcedureName = "Proc_Employee_EditEmployee";
@@ -360,62 +400,78 @@ namespace Misa_Web08_TCDN_AnhDv_Api.Controllers
                 // Chuẩn bị tham số đầu vào cho câu lệnh UPDATE
                 var parameters = new DynamicParameters();
 
-                parameters.Add("@$EmployeeID", employeeID);
-                parameters.Add("@$EmployeeCode", employee.EmployeeCode);
-                parameters.Add("@$EmployeeName", employee.EmployeeName);
-                parameters.Add("@$DateOfBirth", employee.DateOfBirth);
-                parameters.Add("@$Gender", employee.Gender);
-                parameters.Add("@$EmployeeAddress", employee.EmployeeAddress);
-                parameters.Add("@$DepartmentID", employee.DepartmentID);
-                parameters.Add("@$JobTitle", employee.JobTitle);
-                parameters.Add("@$IdentityNumber", employee.IdentityNumber);
-                parameters.Add("@$IdentityDate", employee.IdentityDate);
-                parameters.Add("@$IdentityPlace", employee.IdentityPlace);
-                parameters.Add("@$PhoneNumber", employee.PhoneNumber);
-                parameters.Add("@$TelephoneNumber", employee.TelephoneNumber);
-                parameters.Add("@$Email", employee.Email);
-                parameters.Add("@$BankAccountNumber", employee.BankAccountNumber);
-                parameters.Add("@$BankName", employee.BankName);
-                parameters.Add("@$BankBranch", employee.BankBranch);
-                parameters.Add("@$IsCustomer", employee.IsCustomer);
-                parameters.Add("@$IsSupplier", employee.IsSupplier);
-                parameters.Add("@$ModifiedDate", DateTime.Now);
-                parameters.Add("@$ModifiedBy", "Đặng Việt Anh");
+                // lấy ra các property của đối tượng employee
+                var properties = employee.GetType().GetProperties();
+
+                foreach (var property in properties)
+                {
+                    // Lấy ra tên của property
+                    var propertyName = property.Name;
+
+                    // Lấy ra giá trị của property
+                    var propertyValue = property.GetValue(employee);
+
+                    // Thêm tham số đầu vào cho stored procedure
+                    parameters.Add($"@v_{propertyName}", propertyValue);
+                }
+
+                // set lại giá trị cho ModifiedDate
+                parameters.Add("@v_ModifiedDate", DateTime.Now);
+
+                // set giá trị cho ModifiedBy
+                parameters.Add("@v_ModifiedBy", "Đặng Việt Anh");
 
                 // Thực hiện gọi vào DB để chạy câu lệnh UPDATE với tham số đầu vào ở trên
-                var rowEffects = mySqlConnection.Execute(storedProcedureName, parameters, commandType: System.Data.CommandType.StoredProcedure);
+                var rowEffects = MySqlDataAccessHelper.Execute(storedProcedureName, System.Data.CommandType.StoredProcedure, parameters);
 
                 // Xử lý kết quả trả về từ DB
                 if (rowEffects > 0)
                 {
-                    // Trả về dữ liệu cho client
                     return StatusCode(StatusCodes.Status200OK, employeeID);
                 }
                 else
                 {
-                    return StatusCode(StatusCodes.Status400BadRequest, new ErrorCodeMs("e002"));
+                    return StatusCode(StatusCodes.Status400BadRequest, new ErrorResult(
+                         AmisCode.Exception,
+                         Resource.UserMsg_Update_Failed,
+                         Resource.DevMsg_Update_Failed,
+                         Resource.MoreInfo_Exception,
+                         HttpContext.TraceIdentifier
+                     ));
                 }
-
             }
             catch (MySqlException mySqlException)
             {
                 Console.WriteLine(mySqlException.Message);
-                // TODO: Sau này có thể bổ sung log lỗi ở đây để khi gặp exception trace lỗi cho dễ
+                
                 if (mySqlException.ErrorCode == MySqlErrorCode.DuplicateKeyEntry)
                 {
-                    return StatusCode(StatusCodes.Status400BadRequest, new ErrorCodeMs("e003"));
+                    return StatusCode(StatusCodes.Status400BadRequest, new ErrorResult(
+                         AmisCode.DuplicateCode,
+                         Resource.UserMsg_Insert_Duplicate,
+                         Resource.DevMsg_Insert_Duplicate,
+                         Resource.MoreInfo_Exception,
+                         HttpContext.TraceIdentifier
+                     ));
                 }
-                return StatusCode(StatusCodes.Status400BadRequest, new ErrorCodeMs("e001"));
+                return StatusCode(StatusCodes.Status400BadRequest, new ErrorResult(
+                          AmisCode.Exception,
+                          Resource.UserMsg_Update_Failed,
+                          Resource.DevMsg_Update_Failed,
+                          Resource.MoreInfo_Exception,
+                          HttpContext.TraceIdentifier
+                      ));
             }
             catch (Exception exception)
             {
                 Console.WriteLine(exception.Message);
                 return StatusCode(StatusCodes.Status500InternalServerError, new ErrorResult(
-                   AmisErrorCode.Exception,
-                   "Catched an exception",
-                   "Có lỗi xảy ra",
-                   "https://openapi.amis.vn/api/v1/employees",
-                   HttpContext.TraceIdentifier));
+                    AmisCode.Exception,
+                    Resource.UserMsg_Exception,
+                    Resource.DevMsg_Exception,
+                    Resource.MoreInfo_Exception,
+                    HttpContext.TraceIdentifier
+                ));
             }
         }
         #endregion

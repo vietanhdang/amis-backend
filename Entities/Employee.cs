@@ -1,8 +1,11 @@
 ﻿using Misa_Web08_TCDN_AnhDv_Api.Enum;
 using System.ComponentModel.DataAnnotations;
+using System.Reflection;
+using System.Text.RegularExpressions;
+using static Misa.Web08.TCDN.API.Attributes.AmisAttribute;
 
 namespace Misa_Web08_TCDN_AnhDv_Api.Entities
-{ 
+{
     /// <summary>
     /// Bảng nhân viên
     /// </summary>
@@ -17,13 +20,15 @@ namespace Misa_Web08_TCDN_AnhDv_Api.Entities
         /// <summary>
         /// Mã nhân viên
         /// </summary>
-        // [Required(ErrorMessage = "e004")]
+        [NotNullAttribute("Mã nhân viên không được phép để trống")]
+        [FormatAttribute("Mã nhân viên không đúng định dạng", "^NV-[0-9]$")]
         public string? EmployeeCode { get; set; }
 
         /// <summary>
         /// Tên nhân viên
         /// </summary>
         // [Required(ErrorMessage = "e005")]
+        [NotNullAttribute("Tên nhân viên không được để trống")]
         public string? EmployeeName { get; set; }
 
         /// <summary>
@@ -45,6 +50,7 @@ namespace Misa_Web08_TCDN_AnhDv_Api.Entities
         /// <summary>
         /// ID phòng ban
         /// </summary>
+        [NotNullAttribute("Đơn vị không được để trống")]
         public Guid DepartmentID { get; set; }
 
         /// <summary>
@@ -138,5 +144,48 @@ namespace Misa_Web08_TCDN_AnhDv_Api.Entities
         /// Người sửa gần nhất
         /// </summary>
         public string? ModifiedBy { get; set; }
+
+        /// <summary>
+        /// Validate dữ liệu
+        /// </summary>
+        /// <param name="erorrMsg">Thông báo lỗi</param>
+        /// <returns>Trả về true nếu dữ liệu hợp lệ</returns>
+        /// Created by: TCDN AnhDV (24/09/2022)
+        public bool IsValid(out List<string> erorrMsg)
+        {
+            erorrMsg = new List<string>();
+            var isValid = true;
+            var properties = this.GetType().GetProperties();
+            foreach (var property in properties)
+            {
+                var propertyValue = property.GetValue(this);
+                var propertyAttributes = property.GetCustomAttributes();
+                foreach (var propertyAttribute in propertyAttributes)
+                {
+                    if (propertyAttribute is NotNullAttribute)
+                    {
+                        if (string.IsNullOrEmpty(propertyValue?.ToString()))
+                        {
+
+                            isValid = false;
+                            erorrMsg.Add(((NotNullAttribute)propertyAttribute).ErrorMessage);
+                        }
+                    }
+                    if (propertyAttribute is FormatAttribute)
+                    {
+                        if (!string.IsNullOrEmpty(propertyValue?.ToString()))
+                        {
+                            if (!Regex.IsMatch(propertyValue.ToString(), ((FormatAttribute)propertyAttribute).Regex))
+                            {
+                                isValid = false;
+                                erorrMsg.Add(((FormatAttribute)propertyAttribute).ErrorMessage);
+                            }
+                        }
+                    }
+                }
+            }
+            return isValid;
+        }
     }
 }
+

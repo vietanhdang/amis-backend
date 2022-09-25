@@ -5,15 +5,12 @@ namespace Misa.Web08.TCDN.API.Entities.DTO
     public class ErrorResult
     {
         #region Property
-        /// <summary>
-        /// Định danh của mã lỗi nội bộ
-        /// </summary>
-        public AmisErrorCode ErrorCode { get; set; } = AmisErrorCode.Exception;
 
+        public AmisCode AmisCode { get; set; }
         /// <summary>
         /// Thông báo cho user. Không bắt buộc, tùy theo đặc thù từng dịch vụ và client tích hợp
         /// </summary>
-        public string? UserMsg { get; set; }
+        public object? UserMsg { get; set; }
 
         /// <summary>
         /// Thông báo cho Dev. Thông báo ngắn gọn để thông báo cho Dev biết vấn đề đang gặp phải
@@ -28,7 +25,8 @@ namespace Misa.Web08.TCDN.API.Entities.DTO
         /// <summary>
         /// Mã để tra cứu thông tin log: ELK, file log,...
         /// </summary>
-        public string? TraceId { get; set; } 
+        public string? TraceId { get; set; }
+
         #endregion
 
         #region Constructor
@@ -36,14 +34,14 @@ namespace Misa.Web08.TCDN.API.Entities.DTO
         {
 
         }
-        public ErrorResult(AmisErrorCode errorCode, string? userMsg, object? devMsg, string? moreInfo, string? traceId)
+        public ErrorResult(AmisCode errorCode, object? userMsg, object? devMsg, string? moreInfo, string? traceId)
         {
-            ErrorCode = errorCode;
+            AmisCode = errorCode;
             UserMsg = userMsg;
             DevMsg = devMsg;
             MoreInfo = moreInfo;
             TraceId = traceId;
-        } 
+        }
         #endregion
     }
 }

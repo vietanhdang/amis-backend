@@ -1,7 +1,7 @@
 ﻿namespace Misa_Web08_TCDN_AnhDv_Api.Enum
 {
     /// <summary>
-    /// Giới tính
+    /// Liệt kê các giới tính
     /// </summary>
     /// Created by: TCDN AnhDV (16/09/2022)
     public enum Gender
